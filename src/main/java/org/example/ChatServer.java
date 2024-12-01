@@ -80,6 +80,20 @@ public class ChatServer {
                 translationMessage("Пользователь " + message + " присоединился к чату.\n", null);
                 System.out.println("Пользователь " + message + " зарегистрированный.");
             }
+        }else {
+            String username = reverseClients.get(clientChannel);
+            if (message.startsWith("/private ")) {
+                String[] parts = message.split(" ", 3);
+                if (parts.length == 3) {
+                    String recipient = parts[1];
+                    String privateMessage = parts[2];
+                    sendPrivateMessage(username, recipient, privateMessage);
+                } else {
+                    clientChannel.write(ByteBuffer.wrap("Invalid private message format. Use: /private <username> <message>\n".getBytes()));
+                }
+            } else {
+                translationMessage("[" + username + "]: " + message + "\n", username);
+            }
         }
     }
 
@@ -91,6 +105,24 @@ public class ChatServer {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
+            }
+        }
+    }
+
+    private static void sendPrivateMessage(String sender, String recipient, String message) {
+        SocketChannel recipientChannel = clients.get(recipient);
+        if (recipientChannel != null) {
+            try {
+                recipientChannel.write(ByteBuffer.wrap(("[Приватный от " + sender + "]: " + message + "\n").getBytes()));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        } else {
+            SocketChannel senderChannel = clients.get(sender);
+            try {
+                senderChannel.write(ByteBuffer.wrap(("Пользователь " + recipient + " не найден.\n").getBytes()));
+            } catch (IOException e) {
+                e.printStackTrace();
             }
         }
     }
